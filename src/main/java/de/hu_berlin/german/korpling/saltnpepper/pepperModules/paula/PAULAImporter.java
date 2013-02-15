@@ -19,9 +19,11 @@ package de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Condition;
@@ -38,7 +40,9 @@ import org.osgi.service.log.LogService;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperExceptions.PepperFWException;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperExceptions.PepperModuleException;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperImporter;
+import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperMapper;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperImporterImpl;
+import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperMapperImpl;
 import de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula.exceptions.PAULAImporterException;
 import de.hu_berlin.german.korpling.saltnpepper.salt.saltCommon.SaltCommonFactory;
 import de.hu_berlin.german.korpling.saltnpepper.salt.saltCommon.sCorpusStructure.SCorpus;
@@ -75,25 +79,6 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 				this.getLogService().log(LogService.LOG_DEBUG,this.getName()+" is created...");
 		}//just for logging: to say, that the current module has been loaded
 	}
-
-//===================================== start: performance variables
-	/**
-	 * Measured time which is needed to import the corpus structure. 
-	 */
-	private Long timeImportSCorpusStructure= 0l;
-	/**
-	 * Measured total time which is needed to import the document corpus structure. 
-	 */
-	private Long totalTimeImportSDocumentStructure= 0l;
-	/**
-	 * Measured time which is needed to load all documents into paula model.. 
-	 */
-	private Long totalTimeToLoadDocument= 0l;
-	/**
-	 * Measured time which is needed to map all documents to salt. 
-	 */
-	private Long totalTimeToMapDocument= 0l;
-//===================================== end: performance variables
 	
 //===================================== start: thread number
 	/**
@@ -171,13 +156,11 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 	{
 		if (this.getCorpusDefinition().getCorpusPath()== null)
 			throw new PAULAImporterException("Cannot import corpus-structure, because no corpus-path is given.");
-		timeImportSCorpusStructure= System.nanoTime();
 		
 		this.sDocumentResourceTable= new Hashtable<SElementId, URI>();	
 		this.sCorpusGraph= sCorpusGraph;
 		File corpusPath= new File(this.getCorpusDefinition().getCorpusPath().toFileString());
 		this.extractCorpusStructureRec(corpusPath, corpusPath.getName(), null);
-		timeImportSCorpusStructure= System.nanoTime()- timeImportSCorpusStructure;
 	}
 // ========================== start: extract corpus-path	
 	/**
@@ -291,95 +274,10 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 		}//the current folder is a corpus
 	}
 // ========================== end: extract corpus-path
-	/**
-	 * Extracts properties out of given special parameters.
-	 */
-	private void exctractProperties()
-	{
-		if (this.getSpecialParams()!= null)
-		{//check if flag for running in parallel is set
-			File propFile= new File(this.getSpecialParams().toFileString());
-			this.props= new Properties();
-			try{
-				this.props.load(new FileInputStream(propFile));
-			}catch (Exception e)
-			{throw new PAULAImporterException("Cannot find input file for properties: "+propFile+"\n nested exception: "+ e.getMessage());}
-			if (this.props.containsKey(PROP_RUN_IN_PARALLEL))
-			{
-				try {
-					Boolean val= new Boolean(this.props.getProperty(PROP_RUN_IN_PARALLEL));
-					this.setRUN_IN_PARALLEL(val);
-				} catch (Exception e) 
-				{
-					if (this.getLogService()!= null)
-						this.getLogService().log(LogService.LOG_WARNING, "Cannot set correct property value of property "+PROP_RUN_IN_PARALLEL+" to "+this.getName()+", because of the value is not castable to Boolean. A correct value can contain 'true' or 'false'.");
-				}
-			}
-			else if (this.props.containsKey(PROP_NUM_OF_PARALLEL_DOCUMENTS))
-			{
-				try {
-					Integer val= new Integer(this.props.getProperty(PROP_NUM_OF_PARALLEL_DOCUMENTS));
-					if (val > 0)
-						this.setNumOfParallelDocuments(val);
-				} catch (Exception e) 
-				{
-					if (this.getLogService()!= null)
-						this.getLogService().log(LogService.LOG_WARNING, "Cannot set correct property value of property "+PROP_NUM_OF_PARALLEL_DOCUMENTS+" to "+this.getName()+", because of the value is not castable to Integer. A correct value must be a positiv, whole number (>0).");
-				}
-			}
-		}//check if flag for running in parallel is set
-	}
 	
-	/**
-	 * ThreadPool
-	 */
-	private ExecutorService executorService= null;
-	
-	/**
-	 * If this method is not really implemented, it will call the Method start(sElementId) for every document 
-	 * and corpus, which shall be processed. If it is not really implemented, the method-call will be serial and
-	 * and not parallel. To implement a parallelization override this method and take care, that your code is
-	 * thread-safe. 
-	 * For getting an impression how to implement this method, here is a snipplet of super class 
-	 * PepperImporter of this method:
-	 * <br/>
-	 * boolean isStart= true;
-	 * SElementId sElementId= null;
-	 * while ((isStart) || (sElementId!= null))
-	 * {	
-	 *  isStart= false;
-	 *		sElementId= this.getPepperModuleController().get();
-	 *		if (sElementId== null)
-	 *			break;
-	 *		
-	 *		//call for using push-method
-	 *		this.start(sElementId);
-	 *		
-	 *		if (this.returningMode== RETURNING_MODE.PUT)
-	 *		{	
-	 *			this.getPepperModuleController().put(sElementId);
-	 *		}
-	 *		else if (this.returningMode== RETURNING_MODE.FINISH)
-	 *		{	
-	 *			this.getPepperModuleController().finish(sElementId);
-	 *		}
-	 *		else 
-	 *			throw new PepperModuleException("An error occurs in this module (name: "+this.getName()+"). The returningMode isn�t correctly set (it�s "+this.getReturningMode()+"). Please contact module supplier.");
-	 *		this.end();
-	 *	}
-	 * After all documents were processed this method of super class will call the method end().
-	 */
 	@Override
 	public void start() throws PepperModuleException
 	{
-		this.mapperRunners= new BasicEList<MapperRunner>();
-		{//extracts special parameters
-			this.exctractProperties();
-		}//extracts special parameters
-		{//initialize ThreadPool
-			executorService= Executors.newFixedThreadPool(this.getNumOfParallelDocuments());
-		}//initialize ThreadPool
-		
 		boolean isStart= true;
 		SElementId sElementId= null;
 		while ((isStart) || (sElementId!= null))
@@ -393,17 +291,43 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 			this.start(sElementId);
 		}	
 		
-		for (MapperRunner mapperRunner: this.mapperRunners)
+		for (PepperMapperImpl mapper: this.getMappers())
 		{
-			mapperRunner.waitUntilFinish();
+			try {
+				mapper.join();
+			} catch (InterruptedException e) {
+				throw new PepperModuleException("An exception occured while waiting for thread to terminate '"+mapper.getName()+"'.", e);
+			}
+			//TODO: set UncoughtExceptionHandler and read it here
 		}
 		this.end();
 	}
 	
 	/**
-	 * List of all used mapper runners.
+	 * A threadsafe list of all mapper objects
 	 */
-	private EList<MapperRunner> mapperRunners= null;
+	private Collection<PepperMapperImpl> mappers= null;
+	
+	/**
+	 * A lock for method {@link #getMappers()} to create a new mappers list.
+	 */
+	private Lock getMapperLock= new ReentrantLock(); 
+	/**
+	 * Returns a threadsafe list of all mappers that have been started.
+	 * @return
+	 */
+	protected Collection<PepperMapperImpl> getMappers()
+	{
+		if (mappers== null)
+		{
+			getMapperLock.lock();
+			try{
+				mappers= new Vector<PepperMapperImpl>();
+			}finally
+			{getMapperLock.unlock();}
+		}
+		return(mappers);
+	}
 	
 	/**
 	 * This method is called by method start() of superclass PepperImporter, if the method was not overriden
@@ -431,7 +355,7 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 					mapperRunner.mapper= mapper;
 					mapperRunner.sDocument= sDocument;
 					mapper.setPAULA_FILE_ENDINGS(PAULA_FILE_ENDINGS);
-					mapper.setCurrentSDocument(sDocument);
+					mapper.setSDocument(sDocument);
 					mapper.setLogService(this.getLogService());
 				}//configure mapper and mapper runner
 				
@@ -439,11 +363,6 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 				{//run import in parallel	
 					this.mapperRunners.add(mapperRunner);
 					this.executorService.execute(mapperRunner);
-//					
-//					String threadName= "PAULAMapper_"+sDocument.getSName();
-//					Thread paulaMapperRunnerThread= new Thread(mapperRunner, threadName);
-//					this.mapperRunners.add(mapperRunner);
-//					paulaMapperRunnerThread.start();
 				}//run import in parallel
 				else 
 				{//do not run import in parallel
@@ -478,17 +397,6 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 		 */
 		private Condition finishCondition=lock.newCondition();
 		
-		public void waitUntilFinish()
-		{
-			lock.lock();
-			try {
-				if (!isFinished)
-					finishCondition.await();
-			} catch (InterruptedException e) {
-				throw new PepperFWException(e.getMessage());
-			}
-			lock.unlock();
-		}
 		
 		@Override
 		public void run() 
@@ -509,11 +417,11 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 				URI paulaDoc= sDocumentResourceTable.get(sDocument.getSElementId());
 				if (paulaDoc== null)
 					throw new PAULAImporterException("BUG: Cannot start import, no paula-document-path was found for SDocument '"+sDocument.getSElementId()+"'.");
-				mapper.setCurrentPAULADocument(paulaDoc);
+				mapper.setResourceURI(paulaDoc);
 			}//getting paula-document-path
 			try 
 			{
-				mapper.mapPAULADocument2SDocument();
+				mapper.mapSDocument();
 				getPepperModuleController().put(this.sDocument.getSElementId());
 			}catch (Exception e)
 			{
@@ -529,27 +437,6 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 			this.isFinished= true;
 			this.finishCondition.signal();
 			this.lock.unlock();
-		}
-	}
-	
-	/**
-	 * This method is called by method start() of super class PepperModule. If you do not implement
-	 * this method, it will call start(sElementId), for all super corpora in current SaltProject. The
-	 * sElementId refers to one of the super corpora. 
-	 */
-	@Override
-	public void end() throws PepperModuleException
-	{
-		super.end();
-		if (this.getLogService()!= null)
-		{	
-			StringBuffer msg= new StringBuffer();
-			msg.append("needed time of "+this.getName()+":\n");
-			msg.append("\t time to import whole corpus-structure:\t\t\t\t"+ timeImportSCorpusStructure / 1000000+"\n");
-			msg.append("\t total time to import whole document-structure:\t\t"+ totalTimeImportSDocumentStructure / 1000000+"\n");
-			msg.append("\t total time to load whole document-structure:\t\t\t"+ totalTimeToLoadDocument / 1000000+"\n");
-			msg.append("\t total time to map whole document-structure to salt:\t"+ totalTimeToMapDocument / 1000000+"\n");
-			this.getLogService().log(LogService.LOG_DEBUG, msg.toString());
 		}
 	}
 }
