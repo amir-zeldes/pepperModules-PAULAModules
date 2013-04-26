@@ -20,6 +20,9 @@ package de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
@@ -40,6 +43,8 @@ import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.MAPPING_RES
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperImporter;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperMapper;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperMapperConnector;
+import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperModule;
+import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.exceptions.NotInitializedException;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperImporterImpl;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperMapperConnectorImpl;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperMapperImpl;
@@ -76,25 +81,6 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 				this.getLogService().log(LogService.LOG_DEBUG,this.getName()+" is created...");
 		}//just for logging: to say, that the current module has been loaded
 	}
-
-//===================================== start: performance variables
-	/**
-	 * Measured time which is needed to import the corpus structure. 
-	 */
-	private Long timeImportSCorpusStructure= 0l;
-	/**
-	 * Measured total time which is needed to import the document corpus structure. 
-	 */
-	private Long totalTimeImportSDocumentStructure= 0l;
-	/**
-	 * Measured time which is needed to load all documents into paula model.. 
-	 */
-	private Long totalTimeToLoadDocument= 0l;
-	/**
-	 * Measured time which is needed to map all documents to salt. 
-	 */
-	private Long totalTimeToMapDocument= 0l;
-//===================================== end: performance variables
 	
 //===================================== start: thread number
 	/**
@@ -161,6 +147,7 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 	/**
 	 * Extracts properties out of given special parameters.
 	 */
+	//TODO create PAULAProperties
 	private void exctractProperties()
 	{
 		if (this.getSpecialParams()!= null)
@@ -197,197 +184,86 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 		}//check if flag for running in parallel is set
 	}
 	
-	/**
-	 * ThreadPool
-	 */
-	private ExecutorService executorService= null;
-	
 	/** Group of all mapper threads of this module **/
-	private ThreadGroup threadGroup= null;
+	private ThreadGroup mapperThreadGroup= null;
 	
 	// ========================== end: extract corpus-path
 	
-		@Override
-		public void start() throws PepperModuleException
-		{
-			//creating new thread group for mapper threads
-			ThreadGroup activeGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), this.getName()+"_mapperGroup");
-			
-			boolean isStart= true;
-			SElementId sElementId= null;
-			while ((isStart) || (sElementId!= null))
-			{	
-				isStart= false;
-				sElementId= this.getPepperModuleController().get();
-				if (sElementId== null)
-					break;
-				
-				//call for using push-method
-				this.start(sElementId);
-			}	
-			
-			for (PepperMapperConnector connector: this.getMapperConnectors())
-			{
-				MAPPING_RESULT result= connector.getMappingResult();
-				if (MAPPING_RESULT.DELETED.equals(result))
-					this.getPepperModuleController().finish(connector.getSElementId());
-				else if (MAPPING_RESULT.FINISHED.equals(result))
-					this.getPepperModuleController().put(connector.getSElementId());
-				//TODO: set UncoughtExceptionHandler and read it here
-			}
-			this.end();
-		}
+	@Override
+	public void start() throws PepperModuleException
+	{
+		System.out.println("starting start() PAULAIMporter");
+		//creating new thread group for mapper threads
+		mapperThreadGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), this.getName()+"_mapperGroup");
 		
-		/**
-		 * A threadsafe list of all {@link PepperMapperConnector} objects which are connected with a started {@link PepperMapper}.
-		 */
-		private Collection<PepperMapperConnector> mappersConnectors= null;
+		boolean isStart= true;
+		SElementId sElementId= null;
+		while ((isStart) || (sElementId!= null))
+		{	
+			isStart= false;
+			sElementId= this.getPepperModuleController().get();
+			if (sElementId== null)
+				break;
+			
+			//call for using push-method
+			this.start(sElementId);
+		}	
 		
-		/**
-		 * A lock for method {@link #getMappers()} to create a new mappers list.
-		 */
-		private Lock getMapperLock= new ReentrantLock(); 
-		/**
-		 * Returns a threadsafe list of all {@link PepperMapperConnector} objects which are connected with a started {@link PepperMapper}.
-		 * @return
-		 */
-		protected Collection<PepperMapperConnector> getMapperConnectors()
+		for (PepperMapperConnector connector: this.getMapperConnectors().values())
 		{
-			if (mappersConnectors== null)
-			{
-				getMapperLock.lock();
-				try{
-					mappersConnectors= new Vector<PepperMapperConnector>();
-				}finally
-				{getMapperLock.unlock();}
-			}
-			return(mappersConnectors);
+			System.out.println("waiting for: "+ connector.getSElementId());
+			MAPPING_RESULT result= connector.getMappingResult();
+			if (MAPPING_RESULT.DELETED.equals(result))
+				this.getPepperModuleController().finish(connector.getSElementId());
+			else if (MAPPING_RESULT.FINISHED.equals(result))
+				this.getPepperModuleController().put(connector.getSElementId());
+			//TODO: set UncoughtExceptionHandler and read it here
 		}
-				
-		/**
-		 * This method is called by method start() of superclass PepperImporter, if the method was not overriden
-		 * by the current class. If this is not the case, this method will be called for every document which has
-		 * to be processed.
-		 * @param sElementId the id value for the current document or corpus to process  
-		 */
-		@Override
-		public void start(SElementId sElementId) throws PepperModuleException 
-		{
-			if (	(sElementId!= null) &&
-					(sElementId.getSIdentifiableElement()!= null) &&
-					((sElementId.getSIdentifiableElement() instanceof SDocument) ||
-					((sElementId.getSIdentifiableElement() instanceof SCorpus))))
-			{//only if given sElementId belongs to an object of type SDocument or SCorpus	
-				
-				URI resource= getSElementId2ResourceTable().get(sElementId);
-				
-				PepperMapperConnector connector= new PepperMapperConnectorImpl();
-				PepperMapper mapper= new PepperMapperImpl(connector, threadGroup, this.getName()+"_mapper_"+ sElementId);
-				mapper.setResourceURI(resource);
-				if (sElementId.getSIdentifiableElement() instanceof SDocument)
-					mapper.setSDocument((SDocument)sElementId.getSIdentifiableElement());
-				else if (sElementId.getSIdentifiableElement() instanceof SCorpus)
-					mapper.setSCorpus((SCorpus)sElementId.getSIdentifiableElement());
-				mapper.start();
-				
-				
-				
-				
-//				if (sElementId.getSIdentifiableElement() instanceof SCorpus)
-//				{//mapping SCorpus	
-//				}//mapping SCorpus
-//				if (sElementId.getSIdentifiableElement() instanceof SDocument)
-//				{//mapping SDocument
-//					SDocument sDocument= (SDocument) sElementId.getSIdentifiableElement();
-//					MapperRunner mapperRunner= new MapperRunner();
-//					{//configure mapper and mapper runner
-//						PAULA2SaltMapper mapper= new PAULA2SaltMapper();
-//						mapperRunner.mapper= mapper;
-//						mapperRunner.sDocument= sDocument;
-//						mapper.setPAULA_FILE_ENDINGS(PAULA_FILE_ENDINGS);
-//						mapper.setSDocument(sDocument);
-//						mapper.setLogService(this.getLogService());
-//					}//configure mapper and mapper runner
-//					
-//					if (this.getRUN_IN_PARALLEL())
-//					{//run import in parallel	
-//						this.mapperRunners.add(mapperRunner);
-//						this.executorService.execute(mapperRunner);
-//					}//run import in parallel
-//					else 
-//					{//do not run import in parallel
-//						mapperRunner.start();
-//					}//do not run import in parallel
-				}//mapping SDocument
-			}//only if given sElementId belongs to an object of type SDocument or SCorpus
-		}
-		
-		/**
-		 * This class is a container for running PAULAMappings in parallel.
-		 * @author Administrator
-		 *
-		 */
-		private class MapperRunner implements java.lang.Runnable
-		{
-			public SDocument sDocument= null;
-			PAULA2SaltMapper mapper= null;
-			
-			/**
-			 * Lock to lock await and signal methods.
-			 */
-			protected Lock lock= new ReentrantLock();
-			
-			/**
-			 * Flag wich says, if mapperRunner has started and finished
-			 */
-			private Boolean isFinished= false;
-			
-			/**
-			 * If condition is achieved a new SDocument can be created.
-			 */
-			private Condition finishCondition=lock.newCondition();
-			
-			
-			@Override
-			public void run() 
-			{
-				start();
-			}
-			
-			/**
-			 * starts Mapping of PAULA data
-			 */
-			public void start()
-			{
-				if (mapper== null)
-					throw new PAULAImporterException("BUG: Cannot start import, because the mapper is null.");
-				if (sDocument== null)
-					throw new PAULAImporterException("BUG: Cannot start import, because no SDocument object is given.");
-				{//getting paula-document-path
-//					URI paulaDoc= sDocumentResourceTable.get(sDocument.getSElementId());
-					URI paulaDoc= getSElementId2ResourceTable().get(sDocument.getSElementId());
-					if (paulaDoc== null)
-						throw new PAULAImporterException("BUG: Cannot start import, no paula-document-path was found for SDocument '"+sDocument.getSElementId()+"'.");
-					mapper.setResourceURI(paulaDoc);
-				}//getting paula-document-path
-				try 
-				{
-					mapper.mapSDocument();
-					getPepperModuleController().put(this.sDocument.getSElementId());
-				}catch (Exception e)
-				{
-					if (getLogService()!= null)
-					{
-						getLogService().log(LogService.LOG_WARNING, "Cannot import the SDocument '"+sDocument.getSName()+"'. The reason is: "+e);
-					}
-					getPepperModuleController().finish(this.sDocument.getSElementId());
-				}
-				//remove mapper
-				mapper= null;
-				this.lock.lock();
-				this.isFinished= true;
-				this.finishCondition.signal();
-				this.lock.unlock();
-			}
-		}
+		this.end();
 	}
+		
+
+			
+	/**
+	 * This method is called by method start() of superclass PepperImporter, if the method was not overridden
+	 * by the current class. If this is not the case, this method will be called for every document which has
+	 * to be processed.
+	 * @param sElementId the id value for the current document or corpus to process  
+	 */
+	@Override
+	public void start(SElementId sElementId) throws PepperModuleException 
+	{
+		if (	(sElementId!= null) &&
+				(sElementId.getSIdentifiableElement()!= null) &&
+				((sElementId.getSIdentifiableElement() instanceof SDocument) ||
+				((sElementId.getSIdentifiableElement() instanceof SCorpus))))
+		{//only if given sElementId belongs to an object of type SDocument or SCorpus	
+			
+			URI resource= getSElementId2ResourceTable().get(sElementId);
+			
+			PepperMapperConnector connector= new PepperMapperConnectorImpl();
+			this.getMapperConnectors().put(sElementId, connector);
+			connector.setSElementId(sElementId);
+			connector.setResourceURI(resource);
+			PAULA2SaltMapper mapper= new PAULA2SaltMapper(connector, mapperThreadGroup, this.getName()+"_mapper_"+ sElementId);
+			
+			if (sElementId.getSIdentifiableElement() instanceof SDocument)
+				mapper.setSDocument((SDocument)sElementId.getSIdentifiableElement());
+			else if (sElementId.getSIdentifiableElement() instanceof SCorpus)
+				mapper.setSCorpus((SCorpus)sElementId.getSIdentifiableElement());
+			mapper.setPAULA_FILE_ENDINGS(PAULA_FILE_ENDINGS);
+			
+			mapper.start();
+		}//only if given sElementId belongs to an object of type SDocument or SCorpus
+	}
+	
+	/**
+	 * Creates a mapper of type {@link PAULA2SaltMapper}.
+	 * {@inheritDoc PepperModule#createPepperMapper(SElementId)}
+	 */
+	@Override
+	public PepperMapper createPepperMapper(SElementId sElementId)
+	{
+		throw new NotInitializedException("Cannot start mapping, because the method createPepperMapper() of module '"+this.getName()+"' has not been overridden. Please check that first.");
+	}
+}
