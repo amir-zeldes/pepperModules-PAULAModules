@@ -17,7 +17,6 @@
  */
 package de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula.exceptions;
 
-import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperMapperConnector;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.exceptions.PepperMapperException;
 
 public class PAULA2SaltMapperException extends PepperMapperException {	
@@ -28,9 +27,9 @@ public class PAULA2SaltMapperException extends PepperMapperException {
 	private static final long serialVersionUID = -8139718971714405400L;
 	private static final String STD_MSG= "This exception was thrown by the PAULAImporter: "; 
 	
-    public PAULA2SaltMapperException(PepperMapperConnector connector,String s)
-    { super(connector, STD_MSG+ s); }
+    public PAULA2SaltMapperException(String s)
+    { super(STD_MSG+ s); }
     
-	public PAULA2SaltMapperException(PepperMapperConnector connector,String s, Throwable ex)
-	{super(connector, STD_MSG+s, ex); }
+	public PAULA2SaltMapperException(String s, Throwable ex)
+	{super(STD_MSG+s, ex); }
 }

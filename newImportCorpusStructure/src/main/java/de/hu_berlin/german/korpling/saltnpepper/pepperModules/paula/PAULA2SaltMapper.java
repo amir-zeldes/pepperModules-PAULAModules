@@ -29,7 +29,6 @@ import org.eclipse.emf.common.util.URI;
 import org.osgi.service.log.LogService;
 
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.MAPPING_RESULT;
-import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperMapperConnector;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperMapperImpl;
 import de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula.exceptions.PAULA2SaltMapperException;
 import de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula.readers.PAULASpecificReader;
@@ -55,17 +54,11 @@ import de.hu_berlin.german.korpling.saltnpepper.salt.saltCore.SRelation;
 
 public class PAULA2SaltMapper extends PepperMapperImpl
 {	
-	/**
-	 * Initializes this object and sets its {@link ThreadGroup} and the name of the thread.
-	 * @param threadGroup
-	 * @param threadName
-	 * TODO check if this can be removed.
-	 */
-	public PAULA2SaltMapper(PepperMapperConnector connector, ThreadGroup threadGroup, String threadName)
+	
+	public PAULA2SaltMapper()
 	{
-		super(connector, threadGroup,threadName);
-		this.initialize();
-		System.out.println("---------------------------> end of constructor: "+this.elementNamingTable);
+		//TODO check that, very weird, without this an exception occurs.
+		initialize();
 	}
 	/**
 	 * {@inheritDoc PepperMapperImpl#initialize()}
@@ -74,7 +67,7 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 	@Override
 	protected void initialize()
 	{
-		System.out.println("---------------------------> initialize: "+this.getMapperConnector().getSElementId());
+//		System.out.println("---------------------------> initialize: "+this.getMapperConnector().getSElementId());
 		this.elementNamingTable= new Hashtable<String, String>();
 		this.elementOrderTable= new Hashtable<String, Collection<String>>();
 		this.stagingArea= new Hashtable<String, SElementId>();
@@ -88,15 +81,15 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 	 */
 	@Override
 	public MAPPING_RESULT mapSDocument() {
-		System.out.println("---------------------------> mapSDocument: "+this.getMapperConnector().getSElementId());
+//		System.out.println("---------------------------> mapSDocument: "+this.getMapperConnector().getSElementId());
 		System.out.println("---------------------------> naming table: "+this.elementNamingTable);
 		if (this.getResourceURI()== null)
-			throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot map a paula-document to SDocument, because the path for paula-document is empty.");
+			throw new PAULA2SaltMapperException("Cannot map a paula-document to SDocument, because the path for paula-document is empty.");
 		if (this.getSDocument()== null)
-			throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot map a paula-document to SDocument, because the SDocument is empty.");
+			throw new PAULA2SaltMapperException("Cannot map a paula-document to SDocument, because the SDocument is empty.");
 		if (	(this.getPAULA_FILE_ENDINGS()== null) ||
 				(this.getPAULA_FILE_ENDINGS().length==0))
-			throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot map a paula-document to SDocument, no paula-xml-document endings are given.");
+			throw new PAULA2SaltMapperException("Cannot map a paula-document to SDocument, no paula-xml-document endings are given.");
 		
 		{//create SDocumentGraph
 			SDocumentGraph sDocGraph= SaltFactory.eINSTANCE.createSDocumentGraph();
@@ -203,12 +196,12 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 //	public void mapPAULADocument2SDocument()
 //	{
 //		if (this.getResourceURI()== null)
-//			throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot map a paula-document to SDocument, because the path for paula-document is empty.");
+//			throw new PAULA2SaltMapperException("Cannot map a paula-document to SDocument, because the path for paula-document is empty.");
 //		if (this.getSDocument()== null)
-//			throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot map a paula-document to SDocument, because the SDocument is empty.");
+//			throw new PAULA2SaltMapperException("Cannot map a paula-document to SDocument, because the SDocument is empty.");
 //		if (	(this.getPAULA_FILE_ENDINGS()== null) ||
 //				(this.getPAULA_FILE_ENDINGS().length==0))
-//			throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot map a paula-document to SDocument, no paula-xml-document endings are given.");
+//			throw new PAULA2SaltMapperException("Cannot map a paula-document to SDocument, no paula-xml-document endings are given.");
 //		
 //		{//create SDocumentGraph
 //			SDocumentGraph sDocGraph= SaltFactory.eINSTANCE.createSDocumentGraph();
@@ -367,9 +360,9 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 									String text) 
 	{
 		if (this.getSDocument()== null)
-			throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot map primary data to salt document, because no salt document is given.");
+			throw new PAULA2SaltMapperException("Cannot map primary data to salt document, because no salt document is given.");
 		if (this.getSDocument().getSDocumentGraph()== null)
-			throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot map primary data to salt document, because no salt document-graph is given.");
+			throw new PAULA2SaltMapperException("Cannot map primary data to salt document, because no salt document-graph is given.");
 		
 		//create uniqueName
 		String uniqueName= paulaFile.getName();
@@ -419,7 +412,7 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 		String uniqueName= paulaFile.getName() +KW_NAME_SEP + markID;
 		{
 			if (this.elementNamingTable== null)
-				throw new PAULA2SaltMapperException(this.getMapperConnector(), "The map elementNamingTable was not initialized, this might be a bug.");
+				throw new PAULA2SaltMapperException("The map elementNamingTable was not initialized, this might be a bug.");
 			//create entry in element order table (file: elements)
 			if (this.elementOrderTable.get(paulaFile.getName())== null)
 			{
@@ -441,7 +434,7 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 			}
 			catch (Exception e) 
 			{
-				throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot read href ("+href+") in file "+this.getResourceURI()+".");
+				throw new PAULA2SaltMapperException("Cannot read href ("+href+") in file "+this.getResourceURI()+".");
 			}
 		}
 		int runs= 0;
@@ -454,7 +447,7 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 			runs++;
 			//if there is more than one reference
 			if (runs > 1) 
-				throw new PAULA2SaltMapperException(this.getMapperConnector(), "There are too many references for a token node element: " + href);
+				throw new PAULA2SaltMapperException("There are too many references for a token node element: " + href);
 			//when XPointer refers to a text 
 			else if (xPtrRef.getType()== XPtrRef.POINTERTYPE.TEXT)
 			{
@@ -468,22 +461,22 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 					left= left-1;
 					right= left + right;
 					if (left > right)
-						throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot create token, because its left value is higher than its right value. Error in document "+ paulaFile.getName()+ ".");
+						throw new PAULA2SaltMapperException("Cannot create token, because its left value is higher than its right value. Error in document "+ paulaFile.getName()+ ".");
 					if (left < 0)
-						throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot create token, because its left value is smaller than 0. Error in document "+ paulaFile.getName()+ ".");
+						throw new PAULA2SaltMapperException("Cannot create token, because its left value is smaller than 0. Error in document "+ paulaFile.getName()+ ".");
 					if (right > sTextDS.getSText().length())
-						throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot create token, because its right value is higher than the size of the text. Error in document "+ paulaFile.getName()+ ".");
+						throw new PAULA2SaltMapperException("Cannot create token, because its right value is higher than the size of the text. Error in document "+ paulaFile.getName()+ ".");
 				}
 				catch (Exception e)
-				{throw new PAULA2SaltMapperException(this.getMapperConnector(), "The left or right border of XPointer is not set in a correct way: " + href, e);}
+				{throw new PAULA2SaltMapperException("The left or right border of XPointer is not set in a correct way: " + href, e);}
 			}
 			//when XPointer does not refer to a text 
 			else 
-				throw new PAULA2SaltMapperException(this.getMapperConnector(), "An XPointer of the parsed document does not refer to a xml-textelement. Incorrect pointer: " + "base: "+xPtrRef.getDoc() + ", element: " + href + ", type: "+ xPtrRef.getType());
+				throw new PAULA2SaltMapperException("An XPointer of the parsed document does not refer to a xml-textelement. Incorrect pointer: " + "base: "+xPtrRef.getDoc() + ", element: " + href + ", type: "+ xPtrRef.getType());
 		}
 		//if no sTextDS exists-> error
 		if (sTextDS == null) 
-			throw new PAULA2SaltMapperException(this.getMapperConnector(), "No primary data node found for token element: " + paulaFile.getName() + KW_NAME_SEP + markID );
+			throw new PAULA2SaltMapperException("No primary data node found for token element: " + paulaFile.getName() + KW_NAME_SEP + markID );
 		
 		//create SToken object
 		SToken sToken= SaltFactory.eINSTANCE.createSToken();
@@ -527,7 +520,7 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 			{
 				//Fehler, wenn XPointer-Reference vom falschen Typ
 				if (xPtrRef.getType()!= XPtrRef.POINTERTYPE.ELEMENT)
-					throw new PAULA2SaltMapperException(this.getMapperConnector(), "The XPointer references in current file are incorrect. There only have to be element pointers and the following is not one of them: " + href+ ". Error in file: "+xmlBase);
+					throw new PAULA2SaltMapperException("The XPointer references in current file are incorrect. There only have to be element pointers and the following is not one of them: " + href+ ". Error in file: "+xmlBase);
 				
 				//wenn XPointer-Bezugsknoten einen Bereich umfasst
 				if (xPtrRef.isRange())
@@ -566,7 +559,7 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 		} catch (Exception e) 
 		{
 			e.printStackTrace();
-			throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot compute paula-ids corresponding to xmlBase '"+xmlBase+"' and href '"+href+"'.",e);
+			throw new PAULA2SaltMapperException("Cannot compute paula-ids corresponding to xmlBase '"+xmlBase+"' and href '"+href+"'.",e);
 		}
 		
 		return(refPaulaIds);
@@ -600,7 +593,7 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 		String uniqueName= paulaFile.getName() +KW_NAME_SEP + markID;
 		{
 			if (this.elementNamingTable== null)
-				throw new PAULA2SaltMapperException(this.getMapperConnector(), "The map elementNamingTable was not initialized, this might be a bug.");
+				throw new PAULA2SaltMapperException("The map elementNamingTable was not initialized, this might be a bug.");
 			//create entry in element order table (file: elements)
 			if (this.elementOrderTable.get(paulaFile.getName())== null)
 			{
@@ -618,7 +611,7 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 		{
 			String paulaIdEntry= this.elementNamingTable.get(refPAULAId);
 			if (paulaIdEntry== null)
-				throw new PAULA2SaltMapperException(this.getMapperConnector(), "Cannot map the markable '"+markID+"' of file '"+paulaId+"', because the reference '"+refPAULAId+"'does not exist.");
+				throw new PAULA2SaltMapperException("Cannot map the markable '"+markID+"' of file '"+paulaId+"', because the reference '"+refPAULAId+"'does not exist.");
 			SNode dstElement= this.getSDocument().getSDocumentGraph().getSNode(paulaIdEntry);
 			if (dstElement== null)
 			{
@@ -661,7 +654,7 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 				}
 				else
 				{	if (!(dstNode instanceof SToken))
-						throw new PAULA2SaltMapperException(this.getMapperConnector(), "The referred Target Node '"+refPAULAId+"' in document '"+xmlBase+"'is not of type SToken.");
+						throw new PAULA2SaltMapperException("The referred Target Node '"+refPAULAId+"' in document '"+xmlBase+"'is not of type SToken.");
 					sSpanRel= SaltFactory.eINSTANCE.createSSpanningRelation();
 					sSpanRel.setSSource(sSpan);
 					sSpanRel.setSTarget(dstNode);
@@ -765,7 +758,7 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 			for (String paulaElementId: paulaElementIds)
 			{
 				if ((paulaElementId== null) || (paulaElementId.isEmpty()))
-					throw new PAULA2SaltMapperException(this.getMapperConnector(), "No element with xml-id:"+ paulaElementId+ " was found.");
+					throw new PAULA2SaltMapperException("No element with xml-id:"+ paulaElementId+ " was found.");
 				String sElementName= this.elementNamingTable.get(paulaElementId);
 			 	if (sElementName== null)
 				{
@@ -791,7 +784,7 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 						refRelation.addSAnnotation(sAnno);
 					}
 					else
-						{throw new PAULA2SaltMapperException(this.getMapperConnector(), "No element with xml-id:"+ paulaElementId+ " was found.");}
+						{throw new PAULA2SaltMapperException("No element with xml-id:"+ paulaElementId+ " was found.");}
 				}
 			}
 		}
@@ -835,11 +828,11 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 				Collection<String> paulaSrcElementIds= this.getPAULAElementIds(xmlBase, srcHref);
 				Collection<String> paulaDstElementIds= this.getPAULAElementIds(xmlBase, dstHref);
 				if ((paulaSrcElementIds== null) || (paulaSrcElementIds.size()== 0))
-					throw new PAULA2SaltMapperException(this.getMapperConnector(), "The source of pointing relation in file: "+paulaFile.getName() +" is not set.");
+					throw new PAULA2SaltMapperException("The source of pointing relation in file: "+paulaFile.getName() +" is not set.");
 				if ((paulaDstElementIds== null) || (paulaDstElementIds.size()== 0))
-					throw new PAULA2SaltMapperException(this.getMapperConnector(), "The destination of pointing relation in file: "+paulaFile.getName() +" is not set.");
+					throw new PAULA2SaltMapperException("The destination of pointing relation in file: "+paulaFile.getName() +" is not set.");
 				if (this.elementNamingTable== null)
-					throw new PAULA2SaltMapperException(this.getMapperConnector(), "The map elementNamingTable was not initialized, this might be a bug.");
+					throw new PAULA2SaltMapperException("The map elementNamingTable was not initialized, this might be a bug.");
 				//if there are more than one sources or destinations create cross product
 				for (String paulaSrcElementId: paulaSrcElementIds)
 				{
@@ -1061,10 +1054,10 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 					{
 						String sNodeName= this.elementNamingTable.get(refPAULAId);
 						if (sNodeName== null)
-							throw new PAULA2SaltMapperException(this.getMapperConnector(), "An element is referred, which was not already read. The reffered element is '"+refPAULAId+"' and it was reffered in file '"+paulaFile+"'.");
+							throw new PAULA2SaltMapperException("An element is referred, which was not already read. The reffered element is '"+refPAULAId+"' and it was reffered in file '"+paulaFile+"'.");
 						SNode dstNode= this.getSDocument().getSDocumentGraph().getSNode(sNodeName);
 						if (dstNode== null)
-							throw new PAULA2SaltMapperException(this.getMapperConnector(), "No paula element with name: "+ refPAULAId + " was found.");
+							throw new PAULA2SaltMapperException("No paula element with name: "+ refPAULAId + " was found.");
 						domCon.relation.setSTarget(dstNode);
 						this.getSDocument().getSDocumentGraph().addSRelation(domCon.relation);
 						{//adding sSpanRel to layer

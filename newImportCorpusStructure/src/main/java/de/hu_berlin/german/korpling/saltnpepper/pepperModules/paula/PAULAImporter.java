@@ -42,11 +42,11 @@ import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperExceptions.PepperMo
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.MAPPING_RESULT;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperImporter;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperMapper;
-import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperMapperConnector;
+import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperMapperController;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperModule;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.exceptions.NotInitializedException;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperImporterImpl;
-import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperMapperConnectorImpl;
+import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperMapperControllerImpl;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperMapperImpl;
 import de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula.exceptions.PAULAImporterException;
 import de.hu_berlin.german.korpling.saltnpepper.salt.saltCommon.sCorpusStructure.SCorpus;
@@ -209,14 +209,14 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 			this.start(sElementId);
 		}	
 		
-		for (PepperMapperConnector connector: this.getMapperConnectors().values())
+		for (PepperMapperController controller: this.getMapperControllers().values())
 		{
-			System.out.println("waiting for: "+ connector.getSElementId());
-			MAPPING_RESULT result= connector.getMappingResult();
+			System.out.println("waiting for: "+ controller.getSElementId());
+			MAPPING_RESULT result= controller.getMappingResult();
 			if (MAPPING_RESULT.DELETED.equals(result))
-				this.getPepperModuleController().finish(connector.getSElementId());
+				this.getPepperModuleController().finish(controller.getSElementId());
 			else if (MAPPING_RESULT.FINISHED.equals(result))
-				this.getPepperModuleController().put(connector.getSElementId());
+				this.getPepperModuleController().put(controller.getSElementId());
 			//TODO: set UncoughtExceptionHandler and read it here
 		}
 		this.end();
@@ -241,19 +241,19 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 			
 			URI resource= getSElementId2ResourceTable().get(sElementId);
 			
-			PepperMapperConnector connector= new PepperMapperConnectorImpl();
-			this.getMapperConnectors().put(sElementId, connector);
-			connector.setSElementId(sElementId);
-			connector.setResourceURI(resource);
-			PAULA2SaltMapper mapper= new PAULA2SaltMapper(connector, mapperThreadGroup, this.getName()+"_mapper_"+ sElementId);
+			PepperMapperController controller= new PepperMapperControllerImpl(mapperThreadGroup, this.getName()+"_mapper_"+ sElementId);
+			this.getMapperControllers().put(sElementId, controller);
+			controller.setSElementId(sElementId);
 			
+			PepperMapper mapper= this.createPepperMapper(sElementId);
+			mapper.setResourceURI(resource);
 			if (sElementId.getSIdentifiableElement() instanceof SDocument)
 				mapper.setSDocument((SDocument)sElementId.getSIdentifiableElement());
 			else if (sElementId.getSIdentifiableElement() instanceof SCorpus)
 				mapper.setSCorpus((SCorpus)sElementId.getSIdentifiableElement());
-			mapper.setPAULA_FILE_ENDINGS(PAULA_FILE_ENDINGS);
 			
-			mapper.start();
+			controller.setPepperMapper(mapper);
+			controller.start();
 		}//only if given sElementId belongs to an object of type SDocument or SCorpus
 	}
 	
@@ -264,6 +264,8 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 	@Override
 	public PepperMapper createPepperMapper(SElementId sElementId)
 	{
-		throw new NotInitializedException("Cannot start mapping, because the method createPepperMapper() of module '"+this.getName()+"' has not been overridden. Please check that first.");
+		PAULA2SaltMapper mapper= new PAULA2SaltMapper();
+		mapper.setPAULA_FILE_ENDINGS(PAULA_FILE_ENDINGS);
+		return(mapper);
 	}
 }
