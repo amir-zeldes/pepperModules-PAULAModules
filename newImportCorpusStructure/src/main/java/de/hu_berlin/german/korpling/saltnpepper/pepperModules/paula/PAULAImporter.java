@@ -19,38 +19,15 @@ package de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Vector;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
-import org.eclipse.emf.common.util.BasicEList;
-import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.common.util.URI;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.log.LogService;
 
-import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperExceptions.PepperFWException;
-import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperExceptions.PepperModuleException;
-import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.MAPPING_RESULT;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperImporter;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperMapper;
-import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperMapperController;
-import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperModule;
-import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.exceptions.NotInitializedException;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperImporterImpl;
-import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperMapperControllerImpl;
-import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperMapperImpl;
 import de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula.exceptions.PAULAImporterException;
-import de.hu_berlin.german.korpling.saltnpepper.salt.saltCommon.sCorpusStructure.SCorpus;
-import de.hu_berlin.german.korpling.saltnpepper.salt.saltCommon.sCorpusStructure.SDocument;
 import de.hu_berlin.german.korpling.saltnpepper.salt.saltCore.SElementId;
 
 /**
@@ -62,7 +39,6 @@ import de.hu_berlin.german.korpling.saltnpepper.salt.saltCore.SElementId;
  *
  */
 @Component(name="PAULAImporterComponent", factory="PepperImporterComponentFactory")
-//@Service(value=PepperImporter.class)
 public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 {
 	public PAULAImporter()
@@ -183,79 +159,6 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 			}
 		}//check if flag for running in parallel is set
 	}
-	
-//	/** Group of all mapper threads of this module **/
-//	private ThreadGroup mapperThreadGroup= null;
-//	
-//	// ========================== end: extract corpus-path
-//	
-//	@Override
-//	public void start() throws PepperModuleException
-//	{
-//		System.out.println("starting start() PAULAIMporter");
-//		//creating new thread group for mapper threads
-//		mapperThreadGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), this.getName()+"_mapperGroup");
-//		
-//		boolean isStart= true;
-//		SElementId sElementId= null;
-//		while ((isStart) || (sElementId!= null))
-//		{	
-//			isStart= false;
-//			sElementId= this.getPepperModuleController().get();
-//			if (sElementId== null)
-//				break;
-//			
-//			//call for using push-method
-//			this.start(sElementId);
-//		}	
-//		
-//		for (PepperMapperController controller: this.getMapperControllers().values())
-//		{
-//			System.out.println("waiting for: "+ controller.getSElementId());
-//			MAPPING_RESULT result= controller.getMappingResult();
-//			if (MAPPING_RESULT.DELETED.equals(result))
-//				this.getPepperModuleController().finish(controller.getSElementId());
-//			else if (MAPPING_RESULT.FINISHED.equals(result))
-//				this.getPepperModuleController().put(controller.getSElementId());
-//			//TODO: set UncoughtExceptionHandler and read it here
-//		}
-//		this.end();
-//	}
-//		
-//
-//			
-//	/**
-//	 * This method is called by method start() of superclass PepperImporter, if the method was not overridden
-//	 * by the current class. If this is not the case, this method will be called for every document which has
-//	 * to be processed.
-//	 * @param sElementId the id value for the current document or corpus to process  
-//	 */
-//	@Override
-//	public void start(SElementId sElementId) throws PepperModuleException 
-//	{
-//		if (	(sElementId!= null) &&
-//				(sElementId.getSIdentifiableElement()!= null) &&
-//				((sElementId.getSIdentifiableElement() instanceof SDocument) ||
-//				((sElementId.getSIdentifiableElement() instanceof SCorpus))))
-//		{//only if given sElementId belongs to an object of type SDocument or SCorpus	
-//			
-//			URI resource= getSElementId2ResourceTable().get(sElementId);
-//			
-//			PepperMapperController controller= new PepperMapperControllerImpl(mapperThreadGroup, this.getName()+"_mapper_"+ sElementId);
-//			this.getMapperControllers().put(sElementId, controller);
-//			controller.setSElementId(sElementId);
-//			
-//			PepperMapper mapper= this.createPepperMapper(sElementId);
-//			mapper.setResourceURI(resource);
-//			if (sElementId.getSIdentifiableElement() instanceof SDocument)
-//				mapper.setSDocument((SDocument)sElementId.getSIdentifiableElement());
-//			else if (sElementId.getSIdentifiableElement() instanceof SCorpus)
-//				mapper.setSCorpus((SCorpus)sElementId.getSIdentifiableElement());
-//			
-//			controller.setPepperMapper(mapper);
-//			controller.start();
-//		}//only if given sElementId belongs to an object of type SDocument or SCorpus
-//	}
 	
 	/**
 	 * Creates a mapper of type {@link PAULA2SaltMapper}.

@@ -67,11 +67,9 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 	@Override
 	protected void initialize()
 	{
-//		System.out.println("---------------------------> initialize: "+this.getMapperConnector().getSElementId());
 		this.elementNamingTable= new Hashtable<String, String>();
 		this.elementOrderTable= new Hashtable<String, Collection<String>>();
 		this.stagingArea= new Hashtable<String, SElementId>();
-		System.out.println("---------------------------> init: naming table: "+this.elementNamingTable);
 	}
 	
 	/**
@@ -81,8 +79,6 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 	 */
 	@Override
 	public MAPPING_RESULT mapSDocument() {
-//		System.out.println("---------------------------> mapSDocument: "+this.getMapperConnector().getSElementId());
-		System.out.println("---------------------------> naming table: "+this.elementNamingTable);
 		if (this.getResourceURI()== null)
 			throw new PAULA2SaltMapperException("Cannot map a paula-document to SDocument, because the path for paula-document is empty.");
 		if (this.getSDocument()== null)
@@ -121,55 +117,6 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 		}//map all xml-documents
 		return(MAPPING_RESULT.FINISHED);
 	}
-//// ================================================ start: LogService	
-//	private LogService logService;
-//
-//	public void setLogService(LogService logService) 
-//	{
-//		this.logService = logService;
-//	}
-//	
-//	public LogService getLogService() 
-//	{
-//		return(this.logService);
-//	}
-//// ================================================ end: LogService
-//// ================================================ start: physical path of the paula-documents
-//	/**
-//	 * Stores the physical path of the paula-documents.
-//	 */
-//	private URI currentPAULADocument= null;
-//	/**
-//	 * @param currentPAULADocument the currentPAULADocument to set
-//	 */
-//	public void setCurrentPAULADocument(URI currentPAULADocument) {
-//		this.currentPAULADocument = currentPAULADocument;
-//	}
-//
-//	/**
-//	 * @return the currentPAULADocument
-//	 */
-//	public URI getResourceURI() {
-//		return currentPAULADocument;
-//	}
-//	
-//// ================================================ end: physical path of the paula-documents
-//// ================================================ start: current SDocument	
-//	private SDocument getSDocument()= null;
-//	/**
-//	 * @param getSDocument() the getSDocument() to set
-//	 */
-//	public void setgetSDocument()(SDocument getSDocument()) {
-//		this.getSDocument() = getSDocument();
-//	}
-//
-//	/**
-//	 * @return the getSDocument()
-//	 */
-//	public SDocument getSDocument() {
-//		return this.getSDocument();
-//	}
-//// ================================================ end: current SDocument
 // ================================================ start: handling PAULA-file endings
 	/**
 	 * Stores the endings which are used for paula-files
@@ -189,49 +136,7 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 	public String[] getPAULA_FILE_ENDINGS() {
 		return this.PAULA_FILE_ENDINGS;
 	}
-// ================================================ end: handling PAULA-file endings
-//	/**
-//	 * Maps the set current paulaDocument given by an URI, to the set current SDocument. 
-//	 */
-//	public void mapPAULADocument2SDocument()
-//	{
-//		if (this.getResourceURI()== null)
-//			throw new PAULA2SaltMapperException("Cannot map a paula-document to SDocument, because the path for paula-document is empty.");
-//		if (this.getSDocument()== null)
-//			throw new PAULA2SaltMapperException("Cannot map a paula-document to SDocument, because the SDocument is empty.");
-//		if (	(this.getPAULA_FILE_ENDINGS()== null) ||
-//				(this.getPAULA_FILE_ENDINGS().length==0))
-//			throw new PAULA2SaltMapperException("Cannot map a paula-document to SDocument, no paula-xml-document endings are given.");
-//		
-//		{//create SDocumentGraph
-//			SDocumentGraph sDocGraph= SaltFactory.eINSTANCE.createSDocumentGraph();
-//			sDocGraph.setSName(this.getSDocument().getSName()+"_graph");
-//			this.getSDocument().setSDocumentGraph(sDocGraph);
-//		}//create SDocumentGraph
-//		
-//		PAULAFileDelegator paulaFileDelegator= new PAULAFileDelegator();
-//		paulaFileDelegator.setLogService(this.getLogService());
-//		paulaFileDelegator.setMapper(this);
-//		File paulaPath= new File(this.getResourceURI().toFileString());
-//		paulaFileDelegator.setPaulaPath(paulaPath);
-//		{//map all xml-documents
-//			for (File paulaFile: paulaPath.listFiles())
-//			{
-//				String[] parts= paulaFile.getName().split("[.]");
-//				if (parts.length> 1)
-//				{
-//					for (String ending: this.getPAULA_FILE_ENDINGS()) 
-//					{
-//						if (parts[parts.length-1].equalsIgnoreCase(ending))
-//						{
-//							paulaFileDelegator.getPaulaFiles().add(paulaFile);
-//						}
-//					}
-//				}
-//			}	
-//			paulaFileDelegator.startPaulaFiles();
-//		}//map all xml-documents
-//	}
+
 // ======================================= start: staging area
 	/**
 	 * Stores the nodes and edges which has not been seen, but were refenced from other nodes.
@@ -272,11 +177,6 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 		}
 		return(retVal);
 	}
-	
-//	/**
-//	 * Stores names of layers corresponding to the layer elements.
-//	 */
-//	private Hashtable<String, SLayer> layerName2SLayer= null;
 	
 	/**
 	 * Attaches the given sNode to the sLayer, corresponding to the given layer name. If no Layer for this
@@ -631,7 +531,6 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 
 			//create span element
 			SSpan sSpan= SaltFactory.eINSTANCE.createSSpan();
-//			sSpan.setSName(markID);
 			this.getSDocument().getSDocumentGraph().addSNode(sSpan);
 			
 			{//adding sSpan to layer
