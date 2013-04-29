@@ -184,78 +184,78 @@ public class PAULAImporter extends PepperImporterImpl implements PepperImporter
 		}//check if flag for running in parallel is set
 	}
 	
-	/** Group of all mapper threads of this module **/
-	private ThreadGroup mapperThreadGroup= null;
-	
-	// ========================== end: extract corpus-path
-	
-	@Override
-	public void start() throws PepperModuleException
-	{
-		System.out.println("starting start() PAULAIMporter");
-		//creating new thread group for mapper threads
-		mapperThreadGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), this.getName()+"_mapperGroup");
-		
-		boolean isStart= true;
-		SElementId sElementId= null;
-		while ((isStart) || (sElementId!= null))
-		{	
-			isStart= false;
-			sElementId= this.getPepperModuleController().get();
-			if (sElementId== null)
-				break;
-			
-			//call for using push-method
-			this.start(sElementId);
-		}	
-		
-		for (PepperMapperController controller: this.getMapperControllers().values())
-		{
-			System.out.println("waiting for: "+ controller.getSElementId());
-			MAPPING_RESULT result= controller.getMappingResult();
-			if (MAPPING_RESULT.DELETED.equals(result))
-				this.getPepperModuleController().finish(controller.getSElementId());
-			else if (MAPPING_RESULT.FINISHED.equals(result))
-				this.getPepperModuleController().put(controller.getSElementId());
-			//TODO: set UncoughtExceptionHandler and read it here
-		}
-		this.end();
-	}
-		
-
-			
-	/**
-	 * This method is called by method start() of superclass PepperImporter, if the method was not overridden
-	 * by the current class. If this is not the case, this method will be called for every document which has
-	 * to be processed.
-	 * @param sElementId the id value for the current document or corpus to process  
-	 */
-	@Override
-	public void start(SElementId sElementId) throws PepperModuleException 
-	{
-		if (	(sElementId!= null) &&
-				(sElementId.getSIdentifiableElement()!= null) &&
-				((sElementId.getSIdentifiableElement() instanceof SDocument) ||
-				((sElementId.getSIdentifiableElement() instanceof SCorpus))))
-		{//only if given sElementId belongs to an object of type SDocument or SCorpus	
-			
-			URI resource= getSElementId2ResourceTable().get(sElementId);
-			
-			PepperMapperController controller= new PepperMapperControllerImpl(mapperThreadGroup, this.getName()+"_mapper_"+ sElementId);
-			this.getMapperControllers().put(sElementId, controller);
-			controller.setSElementId(sElementId);
-			
-			PepperMapper mapper= this.createPepperMapper(sElementId);
-			mapper.setResourceURI(resource);
-			if (sElementId.getSIdentifiableElement() instanceof SDocument)
-				mapper.setSDocument((SDocument)sElementId.getSIdentifiableElement());
-			else if (sElementId.getSIdentifiableElement() instanceof SCorpus)
-				mapper.setSCorpus((SCorpus)sElementId.getSIdentifiableElement());
-			
-			controller.setPepperMapper(mapper);
-			controller.start();
-		}//only if given sElementId belongs to an object of type SDocument or SCorpus
-	}
+//	/** Group of all mapper threads of this module **/
+//	private ThreadGroup mapperThreadGroup= null;
+//	
+//	// ========================== end: extract corpus-path
+//	
+//	@Override
+//	public void start() throws PepperModuleException
+//	{
+//		System.out.println("starting start() PAULAIMporter");
+//		//creating new thread group for mapper threads
+//		mapperThreadGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), this.getName()+"_mapperGroup");
+//		
+//		boolean isStart= true;
+//		SElementId sElementId= null;
+//		while ((isStart) || (sElementId!= null))
+//		{	
+//			isStart= false;
+//			sElementId= this.getPepperModuleController().get();
+//			if (sElementId== null)
+//				break;
+//			
+//			//call for using push-method
+//			this.start(sElementId);
+//		}	
+//		
+//		for (PepperMapperController controller: this.getMapperControllers().values())
+//		{
+//			System.out.println("waiting for: "+ controller.getSElementId());
+//			MAPPING_RESULT result= controller.getMappingResult();
+//			if (MAPPING_RESULT.DELETED.equals(result))
+//				this.getPepperModuleController().finish(controller.getSElementId());
+//			else if (MAPPING_RESULT.FINISHED.equals(result))
+//				this.getPepperModuleController().put(controller.getSElementId());
+//			//TODO: set UncoughtExceptionHandler and read it here
+//		}
+//		this.end();
+//	}
+//		
+//
+//			
+//	/**
+//	 * This method is called by method start() of superclass PepperImporter, if the method was not overridden
+//	 * by the current class. If this is not the case, this method will be called for every document which has
+//	 * to be processed.
+//	 * @param sElementId the id value for the current document or corpus to process  
+//	 */
+//	@Override
+//	public void start(SElementId sElementId) throws PepperModuleException 
+//	{
+//		if (	(sElementId!= null) &&
+//				(sElementId.getSIdentifiableElement()!= null) &&
+//				((sElementId.getSIdentifiableElement() instanceof SDocument) ||
+//				((sElementId.getSIdentifiableElement() instanceof SCorpus))))
+//		{//only if given sElementId belongs to an object of type SDocument or SCorpus	
+//			
+//			URI resource= getSElementId2ResourceTable().get(sElementId);
+//			
+//			PepperMapperController controller= new PepperMapperControllerImpl(mapperThreadGroup, this.getName()+"_mapper_"+ sElementId);
+//			this.getMapperControllers().put(sElementId, controller);
+//			controller.setSElementId(sElementId);
+//			
+//			PepperMapper mapper= this.createPepperMapper(sElementId);
+//			mapper.setResourceURI(resource);
+//			if (sElementId.getSIdentifiableElement() instanceof SDocument)
+//				mapper.setSDocument((SDocument)sElementId.getSIdentifiableElement());
+//			else if (sElementId.getSIdentifiableElement() instanceof SCorpus)
+//				mapper.setSCorpus((SCorpus)sElementId.getSIdentifiableElement());
+//			
+//			controller.setPepperMapper(mapper);
+//			controller.start();
+//		}//only if given sElementId belongs to an object of type SDocument or SCorpus
+//	}
 	
 	/**
 	 * Creates a mapper of type {@link PAULA2SaltMapper}.
