@@ -99,6 +99,7 @@ public class Salt2PAULAMapper implements PAULAXMLStructure, FilenameFilter
 		return this.exporter;
 	}
 	
+	
 	/**
 	 * 	Maps the SCorpusStructure to a folder structure on disk relative to <br/>
 	 * the given corpusPath.

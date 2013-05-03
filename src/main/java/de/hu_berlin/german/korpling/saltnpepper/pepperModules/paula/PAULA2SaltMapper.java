@@ -72,6 +72,17 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 		this.stagingArea= new Hashtable<String, SElementId>();
 	}
 	
+	
+	/**
+	 * {@inheritDoc PepperMapper#setSDocument(SDocument)}
+	 * 
+	 * OVERRIDE THIS METHOD FOR CUSTOMIZED MAPPING.
+	 */
+	@Override
+	public MAPPING_RESULT mapSCorpus() {
+		return(MAPPING_RESULT.FINISHED);
+	}
+	
 	/**
 	 * {@inheritDoc PepperMapper#setSDocument(SDocument)}
 	 * 
@@ -117,6 +128,7 @@ public class PAULA2SaltMapper extends PepperMapperImpl
 		}//map all xml-documents
 		return(MAPPING_RESULT.FINISHED);
 	}
+	
 // ================================================ start: handling PAULA-file endings
 	/**
 	 * Stores the endings which are used for paula-files
