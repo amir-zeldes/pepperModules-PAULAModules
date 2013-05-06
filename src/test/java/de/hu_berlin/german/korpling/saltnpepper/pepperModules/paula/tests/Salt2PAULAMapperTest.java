@@ -26,6 +26,7 @@ import java.util.Hashtable;
 
 import de.hu_berlin.german.korpling.saltnpepper.pepper.testSuite.moduleTests.util.FileComparator;
 import de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula.PAULAExporter;
+import de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula.PAULAExporterProperties;
 import de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula.Salt2PAULAMapper;
 import de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula.exceptions.PAULAExporterException;
 import de.hu_berlin.german.korpling.saltnpepper.salt.SaltFactory;
@@ -52,12 +53,10 @@ public class Salt2PAULAMapperTest extends TestCase implements FilenameFilter{
 	String outputDirectory2 = resourcePath+File.separator+"SampleExport2"+File.separator;
 	
 	public boolean accept( File f, String s )
-	  {
-	    return s.toLowerCase().endsWith( ".xml" ) 
-	    	 & s.toLowerCase().indexOf("anno")==-1 ;
-			
-		
-	  }
+	{
+		return s.toLowerCase().endsWith( ".xml" ) 
+				& s.toLowerCase().indexOf("anno")==-1 ;
+	}
 
 	
 	public Salt2PAULAMapper getFixture() {
@@ -75,6 +74,7 @@ public class Salt2PAULAMapperTest extends TestCase implements FilenameFilter{
 	@Override	
 	public void setUp(){
 		this.setFixture(new Salt2PAULAMapper());
+		this.getFixture().setProperties(new PAULAExporterProperties());
 		this.setSaltSample(new SaltSample());
 		SDocument doc = this.saltSample.getCorpus().getSDocuments().get(0);
 		

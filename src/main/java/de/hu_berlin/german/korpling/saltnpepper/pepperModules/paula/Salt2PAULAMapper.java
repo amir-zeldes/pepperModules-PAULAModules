@@ -44,6 +44,7 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperExceptions.PepperFWException;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.MAPPING_RESULT;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperMapperImpl;
 import de.hu_berlin.german.korpling.saltnpepper.pepperModules.paula.exceptions.PAULAExporterException;
@@ -84,7 +85,6 @@ public class Salt2PAULAMapper extends PepperMapperImpl implements PAULAXMLStruct
 		return logService;
 	}
 	
-	private static boolean validate = false;
 	private static URI resourcePath = null;
 	
 	private PAULAExporter exporter = null;
@@ -117,7 +117,7 @@ public class Salt2PAULAMapper extends PepperMapperImpl implements PAULAXMLStruct
 			throw new PAULAExporterException("Cannot export document structure because sDocument is null");
 		
 		if (this.getResourceURI() == null)
-			throw new PAULAExporterException("Cannot export document structure because documentPath is null");
+			throw new PAULAExporterException("Cannot export document structure because documentPath is null for '"+this.getSDocument().getSElementId()+"'.");
 		
 		// copy DTD-files to output-path
 		if (resourcePath != null)
@@ -256,7 +256,10 @@ public class Salt2PAULAMapper extends PepperMapperImpl implements PAULAXMLStruct
 		}
 		// dispose PrintWriter table
 		sTextualDSWriterTable = null;
-		if (validate){
+		
+		if (this.getProperties()== null)
+				throw new PepperFWException("No customization property object was given. This might be a bug in pepper module.");
+		if (((PAULAExporterProperties)this.getProperties()).getIsValidate()){
 			for (String fileName : sTextualDSFileTable.values())
 			{
 				if (this.getLogService()!= null)
@@ -648,7 +651,7 @@ public class Salt2PAULAMapper extends PepperMapperImpl implements PAULAXMLStruct
 		/**
 		 * validate all created files
 		 */
-		if (validate){
+		if (((PAULAExporterProperties)this.getProperties()).getIsValidate()){
 			for (String filename : layerNodeFileNames)
 			{
 				this.getLogService().log(LogService.LOG_DEBUG, "XML-Validation: "+filename+ " is valid: "+ 
@@ -2108,16 +2111,6 @@ public class Salt2PAULAMapper extends PepperMapperImpl implements PAULAXMLStruct
 	 */
 	public static void setResourcePath(URI resources) {
 		resourcePath = resources;
-	}
-	
-	/**
-	 * This method activates/deactivates the validation against the DTDs 
-	 * of the output xml-files.
-	 *  
-	 * @param validateOutput
-	 */
-	public static void setValidating(boolean validateOutput){
-		validate = validateOutput;
 	}
 	
 	/**

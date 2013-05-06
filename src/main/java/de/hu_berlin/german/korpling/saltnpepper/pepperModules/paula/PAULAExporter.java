@@ -21,11 +21,11 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Properties;
 
 import org.eclipse.emf.common.util.URI;
 import org.osgi.service.component.annotations.Component;
 
+import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperExceptions.PepperFWException;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperExporter;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.PepperMapper;
 import de.hu_berlin.german.korpling.saltnpepper.pepper.pepperModules.impl.PepperExporterImpl;
@@ -52,14 +52,9 @@ public class PAULAExporter extends PepperExporterImpl implements PepperExporter
 				
 		//set list of formats supported by this module
 		this.addSupportedFormat("paula", "1.0", null);
+		
+		this.setProperties(new PAULAExporterProperties());
 	}	
-	
-	public static final String PROP_VALIDATE_OUTPUT="paulaExporter.validateOutput";
-	
-	/**
-	 * a property representation of a property file
-	 */
-	protected Properties props= null;
 	
 	/**
 	 * Maps all sElementIds corresponding to SDocument object to the URI path were they shall be stored. 
@@ -67,27 +62,19 @@ public class PAULAExporter extends PepperExporterImpl implements PepperExporter
 	private Hashtable<SElementId, URI> sDocumentResourceTable= null;
 	
 	@Override
-	public void exportCorpusStructure(SCorpusGraph corpusGraph)
+	public void exportCorpusStructure(SCorpusGraph sCorpusGraph)
 	{
-		if (sCorpusGraph!= null)
+		if (sCorpusGraph== null)
+			throw new PepperFWException("No SCorpusGraph was passed for exportCorpusStructure(SCorpusGraph corpusGraph). This might be a bug of the pepper framework.");
+		else 
 		{
 			Salt2PAULAMapper mapper= new Salt2PAULAMapper();
 			Salt2PAULAMapper.setResourcePath(this.getResources());
 			mapper.setPAULAExporter(this);
 			mapper.setLogService(this.getLogService());
-			if (props != null){
-				String validate = props.getProperty(PROP_VALIDATE_OUTPUT, "no");
-				if ("yes".equals(validate)){
-					Salt2PAULAMapper.setValidating(true);
-				}else{
-					Salt2PAULAMapper.setValidating(false);
-				}
-			} else {
-				Salt2PAULAMapper.setValidating(false);
-			}
-			
-				
 			sDocumentResourceTable= mapCorpusStructure(sCorpusGraph, this.getCorpusDefinition().getCorpusPath());
+			if (sDocumentResourceTable== null)
+				throw new PepperFWException("mapCorpusStructure() returned an empty table. This might be a bug of pepper module.");
 			if (	(sDocumentResourceTable== null)||
 					(sDocumentResourceTable.size()== 0))
 			{
@@ -166,6 +153,11 @@ public class PAULAExporter extends PepperExporterImpl implements PepperExporter
 	public PepperMapper createPepperMapper(SElementId sElementId)
 	{
 		Salt2PAULAMapper mapper= new Salt2PAULAMapper();
+		if (this.sDocumentResourceTable== null)
+			throw new PepperFWException("this.sDocumentResourceTable() is not initialized. This might be a bug of pepper module '"+this.getName()+"'.");
+		
+		URI resource= this.sDocumentResourceTable.get(sElementId);
+		mapper.setResourceURI(resource);
 		return(mapper);
 	}
 }
